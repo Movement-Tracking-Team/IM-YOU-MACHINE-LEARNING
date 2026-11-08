@@ -27,16 +27,29 @@ RECONNECT_SECONDS = 2.0
 
 
 def receiver_target():
-    """Where the Node receiver is, and the token to register with."""
+    """Where the Node receiver is, and the token to register with.
+
+    Browser phones on `/phone` do not need this. Missing config means we wait
+    for those sockets instead of refusing to start.
+    """
     url, token = os.environ.get("IMU_RECEIVER_URL"), os.environ.get("IMU_TOKEN")
     if url and token:
         return url, token
     if not RECEIVER_CONFIG.exists():
-        raise SystemExit(f"No receiver config at {RECEIVER_CONFIG}. Run phone-imu setup, "
-                         f"or set IMU_RECEIVER_URL and IMU_TOKEN.")
+        return None
     config = json.loads(RECEIVER_CONFIG.read_text())
     # The loopback bootstrap port serves /ws without the local certificate.
     return url or f"ws://127.0.0.1:{config['setupPort']}/ws", token or config["token"]
+
+
+def normalize_samples(samples):
+    """Accept either the receiver's `common_timestamp` or the app's `t`."""
+    out = []
+    for sample in samples:
+        if "common_timestamp" not in sample and "t" in sample:
+            sample = {**sample, "common_timestamp": sample["t"]}
+        out.append(sample)
+    return out
 
 
 def checkpoint_digest():
@@ -53,13 +66,16 @@ class Hub:
         self.engine = LiveEngine()
         self.clients: set[WebSocket] = set()
         self.receiver_connected = False
+        # Browser phones streaming straight to /phone, counted so a disconnect is reported.
+        self.phones = 0
         self.session = None
         self.windows_sent = 0
         self.last_window = None
         self.lock = asyncio.Lock()
 
     def status(self):
-        return {"type": "status", "receiver_connected": self.receiver_connected,
+        return {"type": "status", "receiver_connected": self.receiver_connected or self.phones > 0,
+                "phones": self.phones,
                 "session_id": (self.session or {}).get("session_id"),
                 "recording": self.session is not None,
                 "observed_hz": self.engine.rates(),
@@ -99,8 +115,10 @@ class Hub:
             await self.ingest(message)
 
     async def ingest(self, message):
+        if self.session is None:
+            return
         async with self.lock:
-            self.engine.add_samples(message["device_id"], message["samples"],
+            self.engine.add_samples(message["device_id"], normalize_samples(message.get("samples", [])),
                                     message.get("accel_units", "m/s^2"),
                                     message.get("gyro_units", "deg/s"))
             # 26 ms median, 62 ms p95: off the event loop so sample intake never stalls.
@@ -113,7 +131,11 @@ class Hub:
 
 async def pump(hub: Hub):
     """Stay subscribed to the receiver, reconnecting for as long as the service runs."""
-    url, token = receiver_target()
+    target = receiver_target()
+    if target is None:
+        LOG.info("no phone-imu receiver; browser phones connect on /phone")
+        return
+    url, token = target
     hello = json.dumps({"type": "hello", "role": "subscriber",
                         "token": token, "protocol_version": PROTOCOL_VERSION})
     while True:
@@ -161,6 +183,33 @@ async def health():
 @app.get("/contract")
 async def contract():
     return hub.contract()
+
+
+@app.websocket("/phone")
+async def phone(socket: WebSocket):
+    """Safari phones stream samples here. The Vercel app calls this machine."""
+    await socket.accept()
+    hub.phones += 1
+    await hub.broadcast(hub.status())
+    try:
+        while True:
+            message = await socket.receive_json()
+            kind = message.get("type")
+            if kind == "session_start":
+                async with hub.lock:
+                    hub.engine.reset()
+                hub.session = {"session_id": message.get("session_id")}
+                await hub.broadcast(hub.status())
+            elif kind == "session_stop":
+                hub.session = None
+                await hub.broadcast(hub.status())
+            elif kind == "samples":
+                await hub.ingest(message)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        hub.phones -= 1
+        await hub.broadcast(hub.status())
 
 
 @app.websocket("/live")
