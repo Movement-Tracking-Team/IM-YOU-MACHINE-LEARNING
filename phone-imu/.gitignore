@@ -1,0 +1,6 @@
+node_modules/
+.local/
+recordings/
+test-results/
+playwright-report/
+*.log

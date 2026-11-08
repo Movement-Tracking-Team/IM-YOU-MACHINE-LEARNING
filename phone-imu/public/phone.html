@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IMU • Phone recorder</title><link rel="stylesheet" href="/app.css"></head>
+<body><main class="phone"><a class="eyebrow" href="/setup">PHONE IMU / LOCAL CAPTURE</a><h1>Phone recorder</h1><p class="muted">Keep Safari open, this page visible, and the screen awake.</p>
+<section><label for="device">Device position</label><select id="device"><option value="phone_1">Phone 1</option><option value="phone_2">Phone 2</option></select>
+<button id="enable">Enable sensors &amp; connect</button><p id="connection" role="status">Not connected</p><p id="sensor">Motion permission required</p></section>
+<section><h2 id="recording">Waiting for the computer</h2><p id="sync">Clock not synchronized</p><p id="rate">Actual rate —</p><p id="buffer">Buffered packets: 0</p>
+<canvas id="plot" width="600" height="150" aria-label="Live acceleration plot"></canvas><p class="legend">X · Y · Z acceleration, including gravity</p><button id="stop" class="secondary" disabled>Stop all phones</button></section>
+<p id="error" class="error" role="alert"></p><p id="warning" class="muted" role="status"></p><button id="recover" class="secondary">Download local recovery packets</button>
+<p class="muted small">Raw browser units: acceleration m/s²; gyroscope deg/s. Safari sets the sampling rate. Browser timestamps describe motion events, not independent hardware sensor timestamps.</p>
+</main><script type="module" src="/phone.js"></script></body></html>

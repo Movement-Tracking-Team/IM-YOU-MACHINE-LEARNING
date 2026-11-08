@@ -1,0 +1,24 @@
+# Blueprint path: phone-imu/render.yaml when deploying the parent repository.
+services:
+  - type: web
+    name: two-phone-recorder
+    runtime: node
+    rootDir: phone-imu
+    plan: starter
+    numInstances: 1
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: IMU_CLOUD
+        value: "1"
+      - key: IMU_TOKEN
+        generateValue: true
+      - key: IMU_RECORDINGS
+        value: /var/data/recordings
+    disk:
+      name: recordings
+      mountPath: /var/data
+      sizeGB: 1

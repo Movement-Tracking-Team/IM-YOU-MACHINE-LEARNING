@@ -1,0 +1,17 @@
+{
+  "name": "three-phone-imu",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local HTTPS Safari IMU capture and synchronized three-phone receiver",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "start": "node server.mjs",
+    "test": "node --test --experimental-test-isolation=none test/*.test.mjs",
+    "simulate": "node scripts/simulate.mjs"
+  },
+  "dependencies": { "ws": "https://registry.npmjs.org/ws/-/ws-8.21.3.tgz" },
+  "devDependencies": { "playwright": "https://registry.npmjs.org/playwright/-/playwright-1.61.0.tgz" },
+  "overrides": { "playwright-core": "https://registry.npmjs.org/playwright-core/-/playwright-core-1.61.0.tgz" }
+}

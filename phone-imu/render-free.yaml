@@ -1,0 +1,19 @@
+# Free testing deployment. Download recordings immediately: storage is temporary.
+services:
+  - type: web
+    name: two-phone-recorder
+    runtime: node
+    rootDir: phone-imu
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: IMU_CLOUD
+        value: "1"
+      - key: IMU_TOKEN
+        generateValue: true
+      - key: IMU_RECORDINGS
+        value: /tmp/recordings

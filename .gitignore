@@ -1,3 +1,8 @@
 # Keep training and personal data local; preserve the empty dataset folder.
 /Camargo et al. Dataset/*
 !/Camargo et al. Dataset/.gitkeep
+
+# Local environments and Python artifacts.
+.venv/
+__pycache__/
+*.pyc

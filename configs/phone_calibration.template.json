@@ -1,0 +1,7 @@
+{
+  "verified_against_training_conventions": false,
+  "notes": "Do not mark verified until raw acceleration/gravity, gyroscope units, phone axes, mounting and time alignment have been checked against Camargo. Nulls require actual calibration; they are not defaults.",
+  "foot": {"time_offset_s": null, "accel_scale_to_training": null, "gyro_scale_to_training": null, "rotation_to_training": null},
+  "shank": {"time_offset_s": null, "accel_scale_to_training": null, "gyro_scale_to_training": null, "rotation_to_training": null},
+  "thigh": {"time_offset_s": null, "accel_scale_to_training": null, "gyro_scale_to_training": null, "rotation_to_training": null}
+}
